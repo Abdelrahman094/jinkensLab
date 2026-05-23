@@ -3,12 +3,13 @@ pipeline {
     environment {
         IMAGE = "todo-app"
     }
-    	stage('Checkout') {
-    	steps {
-        	git branch: 'main',
-            	url: 'https://github.com/Abdelrahman094/jinkensLab.git'
-    		}
-	}
+    stages {
+        stage('Checkout') {
+            steps {
+                git branch: 'main',
+                    url: 'https://github.com/Abdelrahman094/jinkensLab.git'
+            }
+        }
         stage('Build') {
             steps {
                 script {
