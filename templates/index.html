@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TASKS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg:     #0e0e0e;
+    --panel:  #161616;
+    --border: #2a2a2a;
+    --accent: #d4f53c;
+    --muted:  #555;
+    --text:   #e8e8e8;
+    --done:   #333;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Mono', monospace;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 60px 20px 100px;
+  }
+
+  /* noise overlay */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 0;
+    opacity: 0.6;
+  }
+
+  .wrap { width: 100%; max-width: 640px; position: relative; z-index: 1; }
+
+  header {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 20px;
+    margin-bottom: 36px;
+  }
+
+  h1 {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(56px, 12vw, 96px);
+    letter-spacing: 0.04em;
+    line-height: 1;
+    color: var(--accent);
+  }
+
+  .count {
+    font-size: 11px;
+    color: var(--muted);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    padding-bottom: 8px;
+  }
+
+  /* Input row */
+  .input-row {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 32px;
+  }
+
+  input[type="text"] {
+    flex: 1;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-family: 'DM Mono', monospace;
+    font-size: 14px;
+    padding: 14px 18px;
+    outline: none;
+    transition: border-color 0.15s;
+  }
+  input[type="text"]::placeholder { color: var(--muted); }
+  input[type="text"]:focus { border-color: var(--accent); }
+
+  button.add-btn {
+    background: var(--accent);
+    color: #0e0e0e;
+    border: none;
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 18px;
+    letter-spacing: 0.08em;
+    padding: 0 24px;
+    cursor: pointer;
+    transition: opacity 0.15s, transform 0.1s;
+  }
+  button.add-btn:hover { opacity: 0.85; }
+  button.add-btn:active { transform: scale(0.97); }
+
+  /* Filter tabs */
+  .filters {
+    display: flex;
+    gap: 0;
+    margin-bottom: 20px;
+    border: 1px solid var(--border);
+    width: fit-content;
+  }
+  .filter-btn {
+    background: none;
+    border: none;
+    border-right: 1px solid var(--border);
+    color: var(--muted);
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    padding: 8px 16px;
+    cursor: pointer;
+    transition: color 0.15s, background 0.15s;
+  }
+  .filter-btn:last-child { border-right: none; }
+  .filter-btn.active { color: var(--accent); background: #1e2200; }
+  .filter-btn:hover:not(.active) { color: var(--text); }
+
+  /* Todo list */
+  #todo-list { display: flex; flex-direction: column; gap: 2px; }
+
+  .todo-item {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    padding: 16px 18px;
+    transition: border-color 0.15s, opacity 0.2s;
+    animation: slideIn 0.2s ease;
+  }
+  @keyframes slideIn {
+    from { opacity: 0; transform: translateY(-6px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  .todo-item:hover { border-color: #3a3a3a; }
+  .todo-item.done { opacity: 0.45; }
+
+  .check-box {
+    width: 20px; height: 20px;
+    border: 1.5px solid var(--muted);
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: border-color 0.15s, background 0.15s;
+  }
+  .check-box:hover { border-color: var(--accent); }
+  .todo-item.done .check-box {
+    background: var(--accent);
+    border-color: var(--accent);
+  }
+  .check-box svg { display: none; }
+  .todo-item.done .check-box svg { display: block; }
+
+  .todo-text {
+    flex: 1;
+    font-size: 14px;
+    line-height: 1.5;
+    word-break: break-word;
+    transition: color 0.2s;
+  }
+  .todo-item.done .todo-text {
+    text-decoration: line-through;
+    color: var(--muted);
+  }
+
+  .del-btn {
+    background: none;
+    border: none;
+    color: var(--muted);
+    cursor: pointer;
+    font-size: 18px;
+    line-height: 1;
+    padding: 2px 6px;
+    opacity: 0;
+    transition: color 0.15s, opacity 0.15s;
+    flex-shrink: 0;
+  }
+  .todo-item:hover .del-btn { opacity: 1; }
+  .del-btn:hover { color: #ff5555; }
+
+  /* Empty state */
+  .empty {
+    text-align: center;
+    padding: 60px 0;
+    color: var(--muted);
+    font-size: 12px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    border: 1px dashed var(--border);
+  }
+
+  /* Bottom strip */
+  .bottom-strip {
+    margin-top: 24px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 11px;
+    color: var(--muted);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+  .clear-btn {
+    background: none;
+    border: none;
+    color: var(--muted);
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    cursor: pointer;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    transition: color 0.15s;
+  }
+  .clear-btn:hover { color: #ff5555; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Tasks</h1>
+    <span class="count" id="count-label">0 remaining</span>
+  </header>
+
+  <div class="input-row">
+    <input type="text" id="new-task" placeholder="What needs to be done?" maxlength="200">
+    <button class="add-btn" onclick="addTodo()">Add</button>
+  </div>
+
+  <div class="filters">
+    <button class="filter-btn active" data-filter="all" onclick="setFilter('all', this)">All</button>
+    <button class="filter-btn" data-filter="active" onclick="setFilter('active', this)">Active</button>
+    <button class="filter-btn" data-filter="done" onclick="setFilter('done', this)">Done</button>
+  </div>
+
+  <div id="todo-list"></div>
+
+  <div class="bottom-strip">
+    <span id="stats">—</span>
+    <button class="clear-btn" onclick="clearDone()">Clear completed</button>
+  </div>
+</div>
+
+<script>
+let todos = [];
+let filter = 'all';
+
+async function fetchTodos() {
+  const res = await fetch('/api/todos');
+  todos = await res.json();
+  render();
+}
+
+async function addTodo() {
+  const inp = document.getElementById('new-task');
+  const text = inp.value.trim();
+  if (!text) return;
+  inp.value = '';
+  const res = await fetch('/api/todos', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({text})
+  });
+  const todo = await res.json();
+  todos.push(todo);
+  render();
+}
+
+async function toggleTodo(id) {
+  const res = await fetch(`/api/todos/${id}`, {method: 'PATCH'});
+  const updated = await res.json();
+  todos = todos.map(t => t.id === id ? updated : t);
+  render();
+}
+
+async function deleteTodo(id) {
+  await fetch(`/api/todos/${id}`, {method: 'DELETE'});
+  todos = todos.filter(t => t.id !== id);
+  render();
+}
+
+async function clearDone() {
+  const done = todos.filter(t => t.done);
+  await Promise.all(done.map(t => fetch(`/api/todos/${t.id}`, {method: 'DELETE'})));
+  todos = todos.filter(t => !t.done);
+  render();
+}
+
+function setFilter(f, btn) {
+  filter = f;
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  render();
+}
+
+function render() {
+  const visible = todos.filter(t =>
+    filter === 'all' ? true : filter === 'active' ? !t.done : t.done
+  );
+  const list = document.getElementById('todo-list');
+  const remaining = todos.filter(t => !t.done).length;
+
+  document.getElementById('count-label').textContent =
+    `${remaining} remaining`;
+  document.getElementById('stats').textContent =
+    `${todos.length} total · ${todos.filter(t=>t.done).length} done`;
+
+  if (visible.length === 0) {
+    list.innerHTML = `<div class="empty">Nothing here</div>`;
+    return;
+  }
+
+  list.innerHTML = visible.map(t => `
+    <div class="todo-item ${t.done ? 'done' : ''}">
+      <div class="check-box" onclick="toggleTodo(${t.id})">
+        <svg width="12" height="10" viewBox="0 0 12 10" fill="none">
+          <path d="M1 5l3.5 3.5L11 1" stroke="#0e0e0e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
+      <span class="todo-text">${escHtml(t.text)}</span>
+      <button class="del-btn" onclick="deleteTodo(${t.id})">×</button>
+    </div>
+  `).join('');
+}
+
+function escHtml(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+document.getElementById('new-task').addEventListener('keydown', e => {
+  if (e.key === 'Enter') addTodo();
+});
+
+fetchTodos();
+</script>
+</body>
+</html>
